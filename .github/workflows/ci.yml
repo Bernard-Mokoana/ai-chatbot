@@ -19,10 +19,10 @@ jobs:
 
     env:
       APP_ENV: test
-      DATABASE_PRIMARY_URL: sqlite+pysqlite:///:memory
-      DATABASE_REPLICA_URL: ""
-      DATABASE_READ_FROM_REPLICA: "false"
-      DATABASE_ALLOW_REPLICA_FALLBACK: "true"
+      DATABASE_URL: sqlite+pysqlite:///:memory
+      # DATABASE_REPLICA_URL: ""
+      # DATABASE_READ_FROM_REPLICA: "false"
+      # DATABASE_ALLOW_REPLICA_FALLBACK: "true"
       REDIS_URL: redis://localhost:6379/0
       JWT_SECRET: test-jwt-secret
       REFRESH_JWT_SECRET: test-refresh-jwt-secret
