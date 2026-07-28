@@ -69,25 +69,31 @@ api = FastAPI(lifespan=lifespan)
 api.include_router(chat)
 api.include_router(auth)
 
-allowed_origins = [
-    origin.strip()
-    for origin in os.environ.get(
-        "ALLOWED_ORIGINS",
-        "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3002,http://127.0.0.1:3002,https://chat-za-ai.vercel.app/",
-    ).split(",")
+default_origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3002",
+    "http://127.0.0.1:3002",
+    "https://chat-za-ai.vercel.app",
+    "https://chat-za-i6yica27u-bernard-mokoanas-projects.vercel.app"
 ]
 
-raw_origins = os.getenv("CORS_ALLOWED_ORIGINS")
+configured_origins = []
+for env_name in ("CORS_ALLOWED_ORIGINS", "CORS_ORIGIN", "ALLOWED_ORIGINS"):
+    raw_origins = os.getenv(env_name)
+    if raw_origins:
+        configured_origins.extend(
+            origin.strip().rstrip("/")
+            for origin in raw_origins.split(",")
+            if origin.strip()
+        )
 
-if raw_origins:
-    production_origins = [
-        origin.strip() for origin in raw_origins.split(",") if origin.strip()
-    ]
-    allowed_origins.extend(production_origins)
+allowed_origins = list(dict.fromkeys(default_origins + configured_origins))
 
 api.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
+    allow_origin_regex=r"https://chat-za-.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -138,18 +144,6 @@ async def rate_limit_middleware(request: Request, call_next):
     response.headers["X-RateLimit-Remaining"] = str(result.remaining)
     response.headers["X-RateLimit-Reset"] = str(result.reset_at)
     return response
-
-
-@api.get("/debug-env")
-def debug_environment():
-    return {
-        "database_url_set": bool(os.getenv("DATABASE_URL")),
-        "redis_url_set": bool(os.getenv("REDIS_URL")),
-        "jwt_secret_set": bool(os.getenv("JWT_SECRET")),
-        "db_host_preview": os.getenv("DATABASE_URL", "")[:20] + "...",
-        "cors_origins": os.getenv("CORS_ORIGIN", "Not set"),
-        "cors_allowed_origins": os.getenv("CORS_ALLOWED_ORIGINS")
-    }
 
 @api.get("/test")
 async def root():
