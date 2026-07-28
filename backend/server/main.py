@@ -14,8 +14,7 @@ from backend.server.src.middlewares.rateLimiter import (
     select_http_rule,
     should_skip_rate_limit,
 )
-from backend.database.config.databaseConfig import engine_primary
-from backend.database.models.base import Base
+from backend.database.config.databaseConfig import engine_primary, Base
 import backend.database.models
 
 from backend.server.src.routes.auth import auth
