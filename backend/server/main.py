@@ -14,6 +14,10 @@ from backend.server.src.middlewares.rateLimiter import (
     select_http_rule,
     should_skip_rate_limit,
 )
+from backend.database.config.databaseConfig import engine_primary
+from backend.database.models.base import Base
+import backend.database.models
+
 from backend.server.src.routes.auth import auth
 from backend.server.src.routes.chat import chat
 from backend.server.src.services.conversation_services import ws_message_limiter
@@ -26,9 +30,11 @@ load_dotenv()
 
 limiter = RateLimiterStore()
 
-
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI):
+
+    Base.metadata.create_all(bind=engine_primary)
+    
     try:
         cleanup_interval = float(os.environ.get("RATE_LIMIT_CLEANUP_INTERVAL", "600"))
         max_idle_seconds = float(os.environ.get("RATE_LIMIT_MAX_IDLE_SECONDS", "3600"))
