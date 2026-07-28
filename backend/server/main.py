@@ -78,6 +78,7 @@ allowed_origins = [
 ]
 
 raw_origins = os.getenv("CORS_ALLOWED_ORIGINS")
+
 if raw_origins:
     production_origins = [
         origin.strip() for origin in raw_origins.split(",") if origin.strip()
@@ -138,6 +139,17 @@ async def rate_limit_middleware(request: Request, call_next):
     response.headers["X-RateLimit-Reset"] = str(result.reset_at)
     return response
 
+
+@api.get("/debug-env")
+def debug_environment():
+    return {
+        "database_url_set": bool(os.getenv("DATABASE_URL")),
+        "redis_url_set": bool(os.getenv("REDIS_URL")),
+        "jwt_secret_set": bool(os.getenv("JWT_SECRET")),
+        "db_host_preview": os.getenv("DATABASE_URL", "")[:20] + "...",
+        "cors_origins": os.getenv("CORS_ORIGIN", "Not set"),
+        "cors_allowed_origins": os.getenv("CORS_ALLOWED_ORIGINS")
+    }
 
 @api.get("/test")
 async def root():
