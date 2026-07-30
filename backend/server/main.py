@@ -14,7 +14,8 @@ from backend.server.src.middlewares.rateLimiter import (
     select_http_rule,
     should_skip_rate_limit,
 )
-from backend.database.config.databaseConfig import engine_primary, Base
+from backend.database.config.databaseConfig import engine_primary, Base, sessionPrimary
+from backend.database.models.tiers import Tier
 import backend.database.models
 
 from backend.server.src.routes.auth import auth
@@ -29,10 +30,33 @@ load_dotenv()
 
 limiter = RateLimiterStore()
 
+def seed_default_data():
+    db = sessionPrimary()
+    try:
+        free_tier = db.query(Tier).filter(Tier.name == "free").first()
+        if not free_tier:
+            new_free_tier = Tier(
+                name="free",
+                 token_limit=100,
+                 message_limit=20,
+                  price_cents=50,
+                   is_active=True
+            )
+            db.add(new_free_tier)
+            db.commit()
+            print("-- SEEDED DEFAULT 'free' TIER --")
+            raise
+    except Exception as e:
+        db.rollback()
+        print(f"Error seeding default tiers: {e}")
+    finally:
+        db.close()
+
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI):
 
     Base.metadata.create_all(bind=engine_primary)
+    seed_default_data()
     
     try:
         cleanup_interval = float(os.environ.get("RATE_LIMIT_CLEANUP_INTERVAL", "600"))
