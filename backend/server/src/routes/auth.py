@@ -6,28 +6,31 @@ from backend.server.src.schema.auth import (
     ResetPasswordSchema,
 )
 from backend.server.src.services.auth_services import AuthService
-from fastapi import APIRouter, Depends, Request, Response, status
+from fastapi import APIRouter, Depends, Request, Response, HTTPException, status
 from sqlalchemy.orm import Session
+
+import logging
+
+logger = logging.getLogger("uvicorn.error")
 
 auth = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 auth_service = AuthService()
 
 
 @auth.post("/register", status_code=status.HTTP_201_CREATED)
-async def register(
-    payload: RegisterSchema,
-    response: Response,
-    request: Request,
-    db: Session = Depends(get_write_db),
-):
-    user = auth_service.register_user(
-        db=db, name=payload.name, email=payload.email, password=payload.password
-    )
-    return {
-        "message": "User created successfully",
-        "user": str(user.id),
-        "email": user.email,
-    }
+async def register(payload: RegisterSchema, db: Session = Depends(get_write_db)):
+    try:
+        user = auth_service.register_user(
+            db=db, name=payload.name, email=payload.email, password=payload.password
+            )
+        return {
+            "message": "User created successfully",
+            "user": str(user.id),
+            "email": user.email,
+            }
+    except Exception as e:
+        logger.error(f"Registration failed: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Registration error: {str(e)}")
 
 
 @auth.post("/login", status_code=status.HTTP_200_OK)
